@@ -99,7 +99,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 
-var Omni;
+var Cel;
 let ReleaseVersion = [];
 let previousVer; // Only used when end ver is null signifying that it was only for the one version
 function UpdateVersionID(Version) {
@@ -122,7 +122,7 @@ function UpdateVersionID(Version) {
     Version = Version.replace("alpha ", "a");
     // Changes beta into b
     Version = Version.replace("beta ", "b");
-    // Changes post 1.0 Releases to omni format
+    // Changes post 1.0 Releases to Cel format
     Version = Version.replace(" pre-release ", "-pre");
     Version = Version.replace(" pre-release", "-pre"); // b1.8 pre-releases
     Version = Version.replace(" prerelease ", "-pre");
@@ -1402,21 +1402,21 @@ function UpdateVersionID(Version) {
     return Version;
 }
 async function CreateVerFile() {
-    // Grabs version info from omniarchive (thank you so much Ouroya!)
-    const Omni_URL = "https://meta.omniarchive.uk/v1/manifest.json";
-    let omniRes = await fetch(Omni_URL, { method: "GET" });
-    let OmniComplete = await omniRes.json();
-    // Sets omni to be version data only instead of including latest update
-    Omni = OmniComplete.versions;
-    for (let i = 0; i < Omni.length; i++) {
+    // Grabs version info from celestia (RIP Bozo Omni)
+    const Cel_URL = "https://meta.celestia.sh/v1/manifest.json";
+    let CelRes = await fetch(Cel_URL, { method: "GET" });
+    let CelComplete = await CelRes.json();
+    // Sets Cel to be version data only instead of including latest update
+    Cel = CelComplete.versions;
+    for (let i = 0; i < Cel.length; i++) {
         // Changes 2013 rereleases to fake dates so they're together with their equivelent versions
-        if (Omni[i].id == "c0.0.11a-launcher")
-            Omni[i].releaseTime = new Date("2009-05-18T00:00:00+00:00");
-        else if (Omni[i].id == "c0.0.13a-launcher")
-            Omni[i].releaseTime = new Date("2009-05-21T00:00:00+00:00");
+        if (Cel[i].id == "c0.0.11a-launcher")
+            Cel[i].releaseTime = new Date("2009-05-18T00:00:00+00:00");
+        else if (Cel[i].id == "c0.0.13a-launcher")
+            Cel[i].releaseTime = new Date("2009-05-21T00:00:00+00:00");
         // Changes c0.30-c-1900-renew's date because they decided to make another in 2011
-        else if (Omni[i].id == "c0.30-c-1900-renew")
-            Omni[i].releaseTime = new Date("2009-12-01T00:00:00+00:00");
+        else if (Cel[i].id == "c0.30-c-1900-renew")
+            Cel[i].releaseTime = new Date("2009-12-01T00:00:00+00:00");
     }
     const mcdf_URL = "https://mcdf.wiki.gg/api.php?action=cargoquery&format=json&limit=500&origin=*&tables=Version_Range&fields=_pageName%2C%20Start%2C%20End&formatversion=2";
     let mcdfOffset = 0;
@@ -1465,7 +1465,7 @@ async function CreateVerFile() {
         mcdf[i]._pageName = mcdf[i]._pageName.replace("&#039;", "'");
         // If it uses present template then manually update it to current
         if ((mcdf[i].End).includes("present"))
-            mcdf[i].End = Omni[0].id;
+            mcdf[i].End = Cel[0].id;
         // Removes "Needs Tested" and Removes space before &.
         // I.e (1.4.4 &[text]) into (1.4.4) if there is else just removes &
         CutoffSymbols.forEach(cutoff => {
@@ -1486,7 +1486,7 @@ async function CreateVerFile() {
         });
         mcdf[i].StartDisplay = mcdf[i].Start;
         mcdf[i].EndDisplay = mcdf[i].End;
-        // Lowercases update names like Omni
+        // Lowercases update names like cel
         mcdf[i].Start = (mcdf[i].Start).toLowerCase();
         mcdf[i].End = (mcdf[i].End).toLowerCase();
         // if End is empty (i.e only one version) then set end to start
@@ -1504,9 +1504,9 @@ async function CreateVerFile() {
     for (let i = 1; i < mcdf.length; i++) {
         let UpdateIndex;
         UpdateIndex = (UpdateInfo) => UpdateInfo.id == mcdf[i].Start;
-        const StartUpdateInfo = Omni[Omni.findIndex(UpdateIndex)];
+        const StartUpdateInfo = Cel[Cel.findIndex(UpdateIndex)];
         UpdateIndex = (UpdateInfo) => UpdateInfo.id == mcdf[i].End;
-        const EndUpdateInfo = Omni[Omni.findIndex(UpdateIndex)];
+        const EndUpdateInfo = Cel[Cel.findIndex(UpdateIndex)];
         let StartRelease = "";
         let EndRelease = "";
         if (StartUpdateInfo.phase == "post-1.0") {
@@ -1549,9 +1549,9 @@ function CreateArticle(Data) {
     // Precomputes info
     let StartUpdateIndex, EndUpdateIndex;
     StartUpdateIndex = (UpdateInfo) => UpdateInfo.id == Data.Start;
-    const StartUpdateInfo = Omni[Omni.findIndex(StartUpdateIndex)];
+    const StartUpdateInfo = Cel[Cel.findIndex(StartUpdateIndex)];
     EndUpdateIndex = (UpdateInfo) => UpdateInfo.id == Data.End;
-    const EndUpdateInfo = Omni[Omni.findIndex(EndUpdateIndex)];
+    const EndUpdateInfo = Cel[Cel.findIndex(EndUpdateIndex)];
     // Assings dummy date as it will be done later after sorting all articles and sorting their ranges
     let FullReleaseDate = new Date();
     let StartRelease = "";
@@ -1585,15 +1585,15 @@ function CreateArticle(Data) {
 function FindReleaseUpdate(Update) {
     let UpdateIndex;
     UpdateIndex = (Info) => Info.id == Update;
-    const UpdateInfo = Omni[Omni.findIndex(UpdateIndex)];
+    const UpdateInfo = Cel[Cel.findIndex(UpdateIndex)];
     let FullRelease = { phase: "", type: "", releaseTime: new Date(), id: "", };
     if (UpdateInfo.phase != "post-1.0")
         return UpdateInfo;
     else {
-        for (let i = Omni.findIndex(UpdateIndex); i > 0; i--) {
-            if (Omni[i].type == "release" || i <= 0)
-                return FullRelease = Omni[i];
+        for (let i = Cel.findIndex(UpdateIndex); i > 0; i--) {
+            if (Cel[i].type == "release" || i <= 0)
+                return FullRelease = Cel[i];
         }
     }
-    return Omni[0]; // Only when latest
+    return Cel[0]; // Only when latest
 }
